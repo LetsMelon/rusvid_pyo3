@@ -57,6 +57,18 @@ fn parse_pixel_values(input: &str) -> IResult<&str, Pixel> {
     Ok((input, pixel))
 }
 
+fn parse_pixel_coordinates(input: &str) -> IResult<&str, (usize, usize)> {
+    let (input, raw_values) = generic_delimited(
+        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
+        '(',
+        ')',
+    )(input)?;
+
+    assert_eq!(raw_values.len(), 2);
+
+    Ok((input, (raw_values[0], raw_values[1])))
+}
+
 pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
     let (input, width) = preceded(
         tag("width"),
@@ -92,16 +104,12 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                 tuple((
                     tag("pixel"),
                     space1,
-                    generic_delimited(
-                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
-                        '(',
-                        ')',
-                    ),
+                    parse_pixel_coordinates,
                     space1,
                     parse_pixel_values,
                 )),
-                |(_, _, coords, _, color): (&str, &str, Vec<usize>, &str, Pixel)| Command::Pixel {
-                    position: (coords[0], coords[1]),
+                |(_, _, position, _, color): (_, _, (usize, usize), _, Pixel)| Command::Pixel {
+                    position,
                     color,
                 },
             ),
@@ -109,31 +117,23 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                 tuple((
                     tag("rect"),
                     space1,
-                    generic_delimited(
-                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
-                        '(',
-                        ')',
-                    ),
+                    parse_pixel_coordinates,
                     space1,
-                    generic_delimited(
-                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
-                        '(',
-                        ')',
-                    ),
+                    parse_pixel_coordinates,
                     space1,
                     parse_pixel_values,
                 )),
-                |(_, _, coords1, _, coords2, _, color): (
-                    &str,
-                    &str,
-                    Vec<usize>,
-                    &str,
-                    Vec<usize>,
-                    &str,
+                |(_, _, corner_position_1, _, corner_position_2, _, color): (
+                    _,
+                    _,
+                    (usize, usize),
+                    _,
+                    (usize, usize),
+                    _,
                     Pixel,
                 )| Command::Rect {
-                    corner_position_1: (coords1[0], coords1[1]),
-                    corner_position_2: (coords2[0], coords2[1]),
+                    corner_position_1,
+                    corner_position_2,
                     color,
                 },
             ),

@@ -10,19 +10,19 @@ pub mod parser;
 
 #[derive(Debug)]
 pub enum ImageFill {
-    Sparse((Vec<Command>, [u8; 4])),
+    Sparse((Vec<Command>, Pixel)),
 }
 
 #[derive(Debug)]
 pub enum Command {
     Pixel {
         position: (usize, usize),
-        color: [u8; 4],
+        color: Pixel,
     },
     Rect {
         corner_position_1: (usize, usize),
         corner_position_2: (usize, usize),
-        color: [u8; 4],
+        color: Pixel,
     },
 }
 

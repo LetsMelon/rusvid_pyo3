@@ -6,6 +6,7 @@ use nom::combinator::map;
 use nom::multi::{many1, separated_list0};
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
+use rusvid_core::pixel::Pixel;
 
 use crate::{Command, CustomImage, ImageFill};
 
@@ -39,6 +40,23 @@ fn generic_bracket_content<'a, F: FnMut(&'a str) -> IResult<&'a str, T>, T>(
     }
 }
 
+fn parse_pixel_values(input: &str) -> IResult<&str, Pixel> {
+    let (input, raw_data) = generic_delimited(
+        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
+        '[',
+        ']',
+    )(input)?;
+
+    let pixel = match raw_data.len() {
+        4 => Pixel::new(raw_data[1], raw_data[2], raw_data[3], raw_data[0]),
+        3 => Pixel::new(raw_data[1], raw_data[2], raw_data[3], 255),
+        // TODO custom error
+        _ => panic!("A color must have 3 or 4 numbers"),
+    };
+
+    Ok((input, pixel))
+}
+
 pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
     let (input, width) = preceded(
         tag("width"),
@@ -62,17 +80,8 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
     //
     // let (input, _) = newline(input)?;
 
-    let (input, background) = preceded(
-        tag("background"),
-        preceded(
-            space1,
-            generic_delimited(
-                generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
-                '[',
-                ']',
-            ),
-        ),
-    )(input)?;
+    let (input, background) =
+        preceded(tag("background"), preceded(space1, parse_pixel_values))(input)?;
 
     let (input, _) = many1(newline)(input)?;
 
@@ -89,17 +98,11 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                         ')',
                     ),
                     space1,
-                    generic_delimited(
-                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
-                        '[',
-                        ']',
-                    ),
+                    parse_pixel_values,
                 )),
-                |(_, _, coords, _, color): (&str, &str, Vec<usize>, &str, Vec<u8>)| {
-                    Command::Pixel {
-                        position: (coords[0], coords[1]),
-                        color: [color[0], color[1], color[2], color[3]],
-                    }
+                |(_, _, coords, _, color): (&str, &str, Vec<usize>, &str, Pixel)| Command::Pixel {
+                    position: (coords[0], coords[1]),
+                    color,
                 },
             ),
             map(
@@ -118,11 +121,7 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                         ')',
                     ),
                     space1,
-                    generic_delimited(
-                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
-                        '[',
-                        ']',
-                    ),
+                    parse_pixel_values,
                 )),
                 |(_, _, coords1, _, coords2, _, color): (
                     &str,
@@ -131,11 +130,11 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     &str,
                     Vec<usize>,
                     &str,
-                    Vec<u8>,
+                    Pixel,
                 )| Command::Rect {
                     corner_position_1: (coords1[0], coords1[1]),
                     corner_position_2: (coords2[0], coords2[1]),
-                    color: [color[0], color[1], color[2], color[3]],
+                    color,
                 },
             ),
         )),
@@ -146,10 +145,7 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
         CustomImage {
             width: width,
             height: height,
-            data: ImageFill::Sparse((
-                commands,
-                [background[0], background[1], background[2], background[3]],
-            )),
+            data: ImageFill::Sparse((commands, background)),
         },
     ))
 }

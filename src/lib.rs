@@ -16,12 +16,12 @@ pub enum ImageFill {
 #[derive(Debug)]
 pub enum Command {
     Pixel {
-        position: (usize, usize),
+        position: (u32, u32),
         color: Pixel,
     },
     Rect {
-        corner_position_1: (usize, usize),
-        corner_position_2: (usize, usize),
+        corner_position_1: (u32, u32),
+        corner_position_2: (u32, u32),
         color: Pixel,
     },
 }
@@ -29,8 +29,8 @@ pub enum Command {
 #[derive(Debug)]
 #[pyclass]
 pub struct CustomImage {
-    pub width: usize,
-    pub height: usize,
+    pub width: u32,
+    pub height: u32,
 
     pub data: ImageFill,
 }
@@ -47,8 +47,8 @@ impl CustomImage {
     pub fn save(&self, path: PathBuf) {
         let mut plane = match &self.data {
             ImageFill::Sparse((_, color)) => Plane::new_with_fill(
-                self.width as u32,
-                self.height as u32,
+                self.width,
+                self.height,
                 Pixel::new(color[1], color[2], color[3], color[0]),
             )
             .unwrap(),
@@ -60,8 +60,8 @@ impl CustomImage {
                     match command {
                         Command::Pixel { position, color } => plane
                             .put_pixel(
-                                position.0 as u32,
-                                position.1 as u32,
+                                position.0,
+                                position.1,
                                 Pixel::new(color[1], color[2], color[3], color[0]),
                             )
                             .unwrap(),
@@ -72,11 +72,11 @@ impl CustomImage {
                         } => {
                             let color = Pixel::new(color[1], color[2], color[3], color[0]);
 
-                            for x in (corner_position_1.0.min(corner_position_2.0) as u32)
-                                ..=(corner_position_1.0.max(corner_position_2.0) as u32)
+                            for x in corner_position_1.0.min(corner_position_2.0)
+                                ..=corner_position_1.0.max(corner_position_2.0)
                             {
-                                for y in (corner_position_1.1.min(corner_position_2.1) as u32)
-                                    ..=(corner_position_1.1.max(corner_position_2.1) as u32)
+                                for y in corner_position_1.1.min(corner_position_2.1)
+                                    ..=corner_position_1.1.max(corner_position_2.1)
                                 {
                                     plane.put_pixel(x, y, color).unwrap();
                                 }

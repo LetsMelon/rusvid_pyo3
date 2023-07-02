@@ -57,7 +57,7 @@ fn parse_pixel_values(input: &str) -> IResult<&str, Pixel> {
     Ok((input, pixel))
 }
 
-fn parse_pixel_coordinates(input: &str) -> IResult<&str, (usize, usize)> {
+fn parse_pixel_coordinates(input: &str) -> IResult<&str, (u32, u32)> {
     let (input, raw_values) = generic_delimited(
         generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
         '(',
@@ -108,7 +108,7 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     space1,
                     parse_pixel_values,
                 )),
-                |(_, _, position, _, color): (_, _, (usize, usize), _, Pixel)| Command::Pixel {
+                |(_, _, position, _, color): (_, _, (u32, u32), _, Pixel)| Command::Pixel {
                     position,
                     color,
                 },
@@ -126,9 +126,9 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                 |(_, _, corner_position_1, _, corner_position_2, _, color): (
                     _,
                     _,
-                    (usize, usize),
+                    (u32, u32),
                     _,
-                    (usize, usize),
+                    (u32, u32),
                     _,
                     Pixel,
                 )| Command::Rect {

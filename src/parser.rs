@@ -26,6 +26,19 @@ fn generic_delimited<'a, F: FnMut(&'a str) -> IResult<&'a str, T>, T>(
     }
 }
 
+fn generic_bracket_content<'a, F: FnMut(&'a str) -> IResult<&'a str, T>, T>(
+    fct: F,
+) -> impl Fn(&'a str) -> IResult<&'a str, Vec<T>> {
+    // hack so that generic F don't have to have the bound 'Copy'
+    let fct = std::rc::Rc::new(std::cell::RefCell::new(fct));
+
+    move |input| {
+        separated_list0(tuple((multispace0, tag(","), multispace0)), |input| {
+            fct.borrow_mut()(input)
+        })(input)
+    }
+}
+
 pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
     let (input, width) = preceded(
         tag("width"),
@@ -54,10 +67,7 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
         preceded(
             space1,
             generic_delimited(
-                separated_list0(
-                    tuple((multispace0, tag(","), multispace0)),
-                    map(digit1, |raw: &str| raw.parse::<u8>().unwrap()),
-                ),
+                generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
                 '[',
                 ']',
             ),
@@ -74,19 +84,13 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     tag("pixel"),
                     space1,
                     generic_delimited(
-                        separated_list0(
-                            tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse().unwrap()),
-                        ),
+                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
                         '(',
                         ')',
                     ),
                     space1,
                     generic_delimited(
-                        separated_list0(
-                            tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse().unwrap()),
-                        ),
+                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
                         '[',
                         ']',
                     ),
@@ -103,28 +107,19 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     tag("rect"),
                     space1,
                     generic_delimited(
-                        separated_list0(
-                            tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse().unwrap()),
-                        ),
+                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
                         '(',
                         ')',
                     ),
                     space1,
                     generic_delimited(
-                        separated_list0(
-                            tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse().unwrap()),
-                        ),
+                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
                         '(',
                         ')',
                     ),
                     space1,
                     generic_delimited(
-                        separated_list0(
-                            tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse().unwrap()),
-                        ),
+                        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
                         '[',
                         ']',
                     ),

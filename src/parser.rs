@@ -75,14 +75,14 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
         preceded(space1, map(digit1, |raw: &str| raw.parse().unwrap())),
     )(input)?;
 
-    let (input, _) = newline(input)?;
+    let (input, _) = many1(newline)(input)?;
 
     let (input, height) = preceded(
         tag("height"),
         preceded(space1, map(digit1, |raw: &str| raw.parse().unwrap())),
     )(input)?;
 
-    let (input, _) = newline(input)?;
+    let (input, _) = many1(newline)(input)?;
 
     // TODO implement types
     // let (input, fill) = preceded(

@@ -46,39 +46,30 @@ impl CustomImage {
 
     pub fn save(&self, path: PathBuf) {
         let mut plane = match &self.data {
-            ImageFill::Sparse((_, color)) => Plane::new_with_fill(
-                self.width,
-                self.height,
-                Pixel::new(color[1], color[2], color[3], color[0]),
-            )
-            .unwrap(),
+            ImageFill::Sparse((_, color)) => {
+                Plane::new_with_fill(self.width, self.height, *color).unwrap()
+            }
         };
 
         match &self.data {
             ImageFill::Sparse((commands, _)) => {
                 for command in commands {
                     match command {
-                        Command::Pixel { position, color } => plane
-                            .put_pixel(
-                                position.0,
-                                position.1,
-                                Pixel::new(color[1], color[2], color[3], color[0]),
-                            )
-                            .unwrap(),
+                        Command::Pixel { position, color } => {
+                            plane.put_pixel(position.0, position.1, *color).unwrap()
+                        }
                         Command::Rect {
                             corner_position_1,
                             corner_position_2,
                             color,
                         } => {
-                            let color = Pixel::new(color[1], color[2], color[3], color[0]);
-
                             for x in corner_position_1.0.min(corner_position_2.0)
                                 ..=corner_position_1.0.max(corner_position_2.0)
                             {
                                 for y in corner_position_1.1.min(corner_position_2.1)
                                     ..=corner_position_1.1.max(corner_position_2.1)
                                 {
-                                    plane.put_pixel(x, y, color).unwrap();
+                                    plane.put_pixel(x, y, *color).unwrap();
                                 }
                             }
                         }

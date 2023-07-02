@@ -9,6 +9,23 @@ use nom::IResult;
 
 use crate::{Command, CustomImage, ImageFill};
 
+fn generic_delimited<'a, F: FnMut(&'a str) -> IResult<&'a str, T>, T>(
+    fct: F,
+    opening_bracket: char,
+    closing_bracket: char,
+) -> impl Fn(&'a str) -> IResult<&'a str, T> {
+    // hack so that generic F don't have to have the bound 'Copy'
+    let fct = std::rc::Rc::new(std::cell::RefCell::new(fct));
+
+    move |input| {
+        delimited(
+            tag(opening_bracket.to_string().as_str()),
+            |input| fct.borrow_mut()(input),
+            tag(closing_bracket.to_string().as_str()),
+        )(input)
+    }
+}
+
 pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
     let (input, width) = preceded(
         tag("width"),
@@ -36,13 +53,13 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
         tag("background"),
         preceded(
             space1,
-            delimited(
-                tag("["),
+            generic_delimited(
                 separated_list0(
                     tuple((multispace0, tag(","), multispace0)),
                     map(digit1, |raw: &str| raw.parse::<u8>().unwrap()),
                 ),
-                tag("]"),
+                '[',
+                ']',
             ),
         ),
     )(input)?;
@@ -56,22 +73,22 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                 tuple((
                     tag("pixel"),
                     space1,
-                    delimited(
-                        tag("("),
+                    generic_delimited(
                         separated_list0(
                             tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse::<usize>().unwrap()),
+                            map(digit1, |raw: &str| raw.parse().unwrap()),
                         ),
-                        tag(")"),
+                        '(',
+                        ')',
                     ),
                     space1,
-                    delimited(
-                        tag("["),
+                    generic_delimited(
                         separated_list0(
                             tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse::<u8>().unwrap()),
+                            map(digit1, |raw: &str| raw.parse().unwrap()),
                         ),
-                        tag("]"),
+                        '[',
+                        ']',
                     ),
                 )),
                 |(_, _, coords, _, color): (&str, &str, Vec<usize>, &str, Vec<u8>)| {
@@ -85,31 +102,31 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                 tuple((
                     tag("rect"),
                     space1,
-                    delimited(
-                        tag("("),
+                    generic_delimited(
                         separated_list0(
                             tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse::<usize>().unwrap()),
+                            map(digit1, |raw: &str| raw.parse().unwrap()),
                         ),
-                        tag(")"),
+                        '(',
+                        ')',
                     ),
                     space1,
-                    delimited(
-                        tag("("),
+                    generic_delimited(
                         separated_list0(
                             tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse::<usize>().unwrap()),
+                            map(digit1, |raw: &str| raw.parse().unwrap()),
                         ),
-                        tag(")"),
+                        '(',
+                        ')',
                     ),
                     space1,
-                    delimited(
-                        tag("["),
+                    generic_delimited(
                         separated_list0(
                             tuple((multispace0, tag(","), multispace0)),
-                            map(digit1, |raw: &str| raw.parse::<u8>().unwrap()),
+                            map(digit1, |raw: &str| raw.parse().unwrap()),
                         ),
-                        tag("]"),
+                        '[',
+                        ']',
                     ),
                 )),
                 |(_, _, coords1, _, coords2, _, color): (

@@ -108,7 +108,7 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     space1,
                     parse_pixel_values,
                 )),
-                |(_, _, position, _, color): (_, _, (u32, u32), _, Pixel)| Command::Pixel {
+                |(_, _, position, _, color): (_, _, (u32, u32), _, Pixel)| Command::DrawPixel {
                     position,
                     color,
                 },
@@ -131,7 +131,7 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     (u32, u32),
                     _,
                     Pixel,
-                )| Command::Rect {
+                )| Command::DrawRect {
                     corner_position_1,
                     corner_position_2,
                     color,

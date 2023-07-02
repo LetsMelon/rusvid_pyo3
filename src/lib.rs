@@ -15,11 +15,11 @@ pub enum ImageFill {
 
 #[derive(Debug)]
 pub enum Command {
-    Pixel {
+    DrawPixel {
         position: (u32, u32),
         color: Pixel,
     },
-    Rect {
+    DrawRect {
         corner_position_1: (u32, u32),
         corner_position_2: (u32, u32),
         color: Pixel,
@@ -55,10 +55,10 @@ impl CustomImage {
             ImageFill::Sparse((commands, _)) => {
                 for command in commands {
                     match command {
-                        Command::Pixel { position, color } => {
+                        Command::DrawPixel { position, color } => {
                             plane.put_pixel(position.0, position.1, *color).unwrap()
                         }
-                        Command::Rect {
+                        Command::DrawRect {
                             corner_position_1,
                             corner_position_2,
                             color,

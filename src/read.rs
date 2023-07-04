@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{digit1, newline, space1};
@@ -6,9 +8,19 @@ use nom::combinator::map;
 use nom::multi::{many1, separated_list0};
 use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
-use rusvid_core::pixel::Pixel;
 
-use crate::{Command, CustomImage, ImageFill};
+#[derive(Debug)]
+pub enum RawCommand {
+    DrawPixel {
+        position: (Result<u32, ParseIntError>, Result<u32, ParseIntError>),
+        color: Vec<Result<u8, ParseIntError>>,
+    },
+    DrawRect {
+        corner_position_1: (Result<u32, ParseIntError>, Result<u32, ParseIntError>),
+        corner_position_2: (Result<u32, ParseIntError>, Result<u32, ParseIntError>),
+        color: Vec<Result<u8, ParseIntError>>,
+    },
+}
 
 fn generic_delimited<'a, F: FnMut(&'a str) -> IResult<&'a str, T>, T>(
     fct: F,
@@ -40,46 +52,51 @@ fn generic_bracket_content<'a, F: FnMut(&'a str) -> IResult<&'a str, T>, T>(
     }
 }
 
-fn parse_pixel_values(input: &str) -> IResult<&str, Pixel> {
+fn parse_pixel_values(input: &str) -> IResult<&str, Vec<Result<u8, ParseIntError>>> {
     let (input, raw_data) = generic_delimited(
-        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
+        generic_bracket_content(map(digit1, |raw: &str| raw.parse())),
         '[',
         ']',
     )(input)?;
 
-    let pixel = match raw_data.len() {
-        4 => Pixel::new(raw_data[1], raw_data[2], raw_data[3], raw_data[0]),
-        3 => Pixel::new(raw_data[1], raw_data[2], raw_data[3], 255),
-        // TODO custom error
-        _ => panic!("A color must have 3 or 4 numbers"),
-    };
-
-    Ok((input, pixel))
+    Ok((input, raw_data))
 }
 
-fn parse_pixel_coordinates(input: &str) -> IResult<&str, (u32, u32)> {
+fn parse_pixel_coordinates(
+    input: &str,
+) -> IResult<&str, (Result<u32, ParseIntError>, Result<u32, ParseIntError>)> {
     let (input, raw_values) = generic_delimited(
-        generic_bracket_content(map(digit1, |raw: &str| raw.parse().unwrap())),
+        generic_bracket_content(map(digit1, |raw: &str| raw.parse())),
         '(',
         ')',
     )(input)?;
 
     assert_eq!(raw_values.len(), 2);
 
-    Ok((input, (raw_values[0], raw_values[1])))
+    Ok((input, (raw_values[0].clone(), raw_values[1].clone())))
 }
 
-pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
+pub fn read_content(
+    input: &str,
+) -> IResult<
+    &str,
+    (
+        Result<u32, ParseIntError>,
+        Result<u32, ParseIntError>,
+        Vec<RawCommand>,
+        Vec<Result<u8, ParseIntError>>,
+    ),
+> {
     let (input, width) = preceded(
         tag("width"),
-        preceded(space1, map(digit1, |raw: &str| raw.parse().unwrap())),
+        preceded(space1, map(digit1, |raw: &str| raw.parse())),
     )(input)?;
 
     let (input, _) = many1(newline)(input)?;
 
     let (input, height) = preceded(
         tag("height"),
-        preceded(space1, map(digit1, |raw: &str| raw.parse().unwrap())),
+        preceded(space1, map(digit1, |raw: &str| raw.parse())),
     )(input)?;
 
     let (input, _) = many1(newline)(input)?;
@@ -108,10 +125,13 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                     space1,
                     parse_pixel_values,
                 )),
-                |(_, _, position, _, color): (_, _, (u32, u32), _, Pixel)| Command::DrawPixel {
-                    position,
-                    color,
-                },
+                |(_, _, position, _, color): (
+                    _,
+                    _,
+                    (Result<u32, ParseIntError>, Result<u32, ParseIntError>),
+                    _,
+                    Vec<Result<u8, ParseIntError>>,
+                )| RawCommand::DrawPixel { position, color },
             ),
             map(
                 tuple((
@@ -126,12 +146,12 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
                 |(_, _, corner_position_1, _, corner_position_2, _, color): (
                     _,
                     _,
-                    (u32, u32),
+                    (Result<u32, ParseIntError>, Result<u32, ParseIntError>),
                     _,
-                    (u32, u32),
+                    (Result<u32, ParseIntError>, Result<u32, ParseIntError>),
                     _,
-                    Pixel,
-                )| Command::DrawRect {
+                    Vec<Result<u8, ParseIntError>>,
+                )| RawCommand::DrawRect {
                     corner_position_1,
                     corner_position_2,
                     color,
@@ -140,12 +160,5 @@ pub fn parse_file(input: &str) -> IResult<&str, CustomImage> {
         )),
     )(input)?;
 
-    Ok((
-        input,
-        CustomImage {
-            width: width,
-            height: height,
-            data: ImageFill::Sparse((commands, background)),
-        },
-    ))
+    Ok((input, (width, height, commands, background)))
 }

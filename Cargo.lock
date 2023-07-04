@@ -741,6 +741,7 @@ dependencies = [
  "nom",
  "pyo3",
  "rusvid_core",
+ "thiserror",
 ]
 
 [[package]]

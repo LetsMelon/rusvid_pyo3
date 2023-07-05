@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - "**.rs"
+      - "**Cargo.**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    paths:
+      - "**.rs"
+      - "**Cargo.**"
+      - ".github/workflows/ci.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, x86, aarch64, armv7]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: $PYTHON_VERSION
+
+      - name: Test
+        run: cargo test
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          sccache: "true"
+          manylinux: auto
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: $PYTHON_VERSION
+          architecture: ${{ matrix.target }}
+
+      - name: Test
+        run: cargo test
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          sccache: "true"
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: $PYTHON_VERSION
+
+      - name: Test
+        run: cargo test
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          sccache: "true"

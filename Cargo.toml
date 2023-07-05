@@ -14,6 +14,6 @@ rusvid_core = { git = "https://github.com/LetsMelon/rusvid", rev = "b4c48788a2d0
 thiserror = "1.0.40"
 
 [dependencies.pyo3]
-version = "0.18.0"
+version = "0.19.1"
 # "abi3-py37" tells pyo3 (and maturin) to build using the stable ABI with minimum Python version 3.7
 features = ["abi3-py37"]

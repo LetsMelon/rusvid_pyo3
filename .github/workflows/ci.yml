@@ -14,7 +14,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  PYTHON_VERSION: "3.10"
 
 jobs:
   linux:
@@ -27,7 +26,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: $PYTHON_VERSION
+          python-version: "3.10"
 
       - name: Test
         run: cargo test
@@ -50,7 +49,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: $PYTHON_VERSION
+          python-version: "3.10"
           architecture: ${{ matrix.target }}
 
       - name: Test
@@ -73,7 +72,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: $PYTHON_VERSION
+          python-version: "3.10"
 
       - name: Test
         run: cargo test

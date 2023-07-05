@@ -28,8 +28,30 @@ jobs:
         with:
           python-version: "3.10"
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install rust binaries
+        run: |
+          cargo binstall --no-confirm cargo-nextest
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Test
-        run: cargo test
+        run: cargo nextest run
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -50,8 +72,30 @@ jobs:
           python-version: "3.10"
           architecture: "x86"
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install rust binaries
+        run: |
+          cargo binstall --no-confirm cargo-nextest
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Test
-        run: cargo test
+        run: cargo nextest run
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -72,8 +116,30 @@ jobs:
         with:
           python-version: "3.10"
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: Install rust binaries
+        run: |
+          cargo binstall --no-confirm cargo-nextest
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Test
-        run: cargo test
+        run: cargo nextest run
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1

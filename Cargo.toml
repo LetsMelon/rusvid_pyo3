@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 [dependencies]
 nom = "7.1.3"
 rusvid_core = { git = "https://github.com/LetsMelon/rusvid", rev = "b4c48788a2d0c1c85a11461a31540869501bba2b" }
-thiserror = "1.0.40"
+thiserror = "1.0.41"
 
 [dependencies.pyo3]
 version = "0.18.0"
